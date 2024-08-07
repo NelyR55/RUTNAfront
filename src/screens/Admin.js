@@ -81,40 +81,69 @@ const Inicio = ({ navigation }) => (
     </View>
   </ImageBackground>
 );
+//AGREGAR SALDO
+const AgregarSaldo = () => {
+  const [usuario, setUsuario] = useState('');
+  const [cantidad, setCantidad] = useState('');
 
-const AgregarSaldo = () => (
-  <ImageBackground source={require('../../assets/fondodef.png')} style={styles.screenContainer}>
-    <View style={styles.cardContainer}>
-      <View style={styles.card}>
-        <MaterialCommunityIcons name="wallet-plus" size={48} color="#FFB347" />
-        <Text style={styles.cardTitle}>Cargar Saldo</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Matrícula"
-          placeholderTextColor="#aaa"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Cantidad"
-          placeholderTextColor="#aaa"
-          keyboardType="numeric"
-        />
-        <LinearGradient
-          colors={['#FFB347', '#FFCC70']}
-          style={styles.button}
-        >
-          <TouchableOpacity
-            style={styles.buttonContent}
-            onPress={() => {}}
+  const handleCargarSaldo = async () => {
+    try {
+      const response = await axios.post('https://rutnaback-production.up.railway.app/user/cargarSaldo', {
+        usuario,
+        cantidad
+      });
+      Alert.alert('Éxito', 'Saldo cargado correctamente');
+      setUsuario('');
+      setCantidad('');
+    } catch (error) {
+      if (error.response) {
+        // Error del servidor
+        Alert.alert('Error', error.response.data.error);
+      } else {
+        // Error en la solicitud
+        Alert.alert('Error', 'Error de conexión');
+      }
+    }
+  };
+
+  return (
+    <ImageBackground source={require('../../assets/fondodef.png')} style={styles.screenContainer}>
+      <View style={styles.cardContainer}>
+        <View style={styles.card}>
+          <MaterialCommunityIcons name="wallet-plus" size={48} color="#FFB347" />
+          <Text style={styles.cardTitle}>Cargar Saldo</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Usuario"
+            placeholderTextColor="#aaa"
+            value={usuario}
+            onChangeText={setUsuario}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Cantidad"
+            placeholderTextColor="#aaa"
+            keyboardType="numeric"
+            value={cantidad}
+            onChangeText={setCantidad}
+          />
+          <LinearGradient
+            colors={['#FFB347', '#FFCC70']}
+            style={styles.button}
           >
-            <Text style={styles.buttonText}>Aceptar</Text>
-          </TouchableOpacity>
-        </LinearGradient>
+            <TouchableOpacity
+              style={styles.buttonContent}
+              onPress={handleCargarSaldo}
+            >
+              <Text style={styles.buttonText}>Aceptar</Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
       </View>
-    </View>
-  </ImageBackground>
-);
-
+    </ImageBackground>
+  );
+};
+//AGREGAR USUARIO
 
 const AgregarUsuario = () => {
   const [selectedRole, setSelectedRole] = useState('Rol');
@@ -163,7 +192,7 @@ const AgregarUsuario = () => {
     </ImageBackground>
   );
 };
-
+///AGREGAR RUTA
 const AgregarRuta = () => {
   const [destino, setDestino] = useState('Ruta');
 
@@ -200,7 +229,7 @@ const AgregarRuta = () => {
     </ImageBackground>
   );
 };
-
+////ACTIVIDAD
 const Actividad = () => {
   const tableData = [
     { usuario: 'Alumno', actividad: 'Compra de boleto', fecha: '01/08/2023' },
@@ -243,13 +272,15 @@ const Admin = () => (
         let iconName;
         if (route.name === 'Inicio') {
           iconName = 'home';
-        } else if (route.name === 'AgregarUsuario') {
+        } else if (route.name === 'Agregar Usuario') {
           iconName = 'account-multiple-plus';
-        } else if (route.name === 'AgregarRuta') {
+        } else if (route.name === 'Agregar Ruta') {
           iconName = 'map-marker-plus';
-        } else if (route.name === 'Actividad') {
+        }else if (route.name === 'Actividad') {
           iconName = 'history';
-        }
+        } else if (route.name === 'Cargar Saldo') {
+          iconName = 'credit-card';
+        } 
 
         return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
       },
@@ -263,8 +294,9 @@ const Admin = () => (
     })}
   >
     <Tab.Screen name="Inicio" component={Inicio} />
-    <Tab.Screen name="AgregarUsuario" component={AgregarUsuario} />
-    <Tab.Screen name="AgregarRuta" component={AgregarRuta} />
+    <Tab.Screen name="Agregar Usuario" component={AgregarUsuario} />
+    <Tab.Screen name="Agregar Ruta" component={AgregarRuta} />
+    <Tab.Screen name="Cargar Saldo" component={AgregarSaldo} />
     <Tab.Screen name="Actividad" component={Actividad} />
   </Tab.Navigator>
 );

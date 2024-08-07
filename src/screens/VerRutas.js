@@ -22,8 +22,7 @@ const VerRutas = () => {
   }, []);
 
   const handleEdit = (id) => {
-    console.log(`Editar ruta con id ${id}`);
-    // Aquí puedes agregar la lógica para editar la ruta
+    navigation.navigate('EditarRuta', { id });
   };
 
   const handleDelete = (id) => {
@@ -126,25 +125,23 @@ const styles = StyleSheet.create({
   nombre: {
     fontSize: 18,
     color: '#000',
-    marginBottom: 4,
+    fontWeight: 'bold',
   },
   precio: {
     fontSize: 16,
-    color: '#000',
-    marginBottom: 8,
+    color: '#333',
   },
   precioLabel: {
-    color: '#000', // Color negro para la palabra 'Precio'
+    fontWeight: 'bold',
   },
   precioValue: {
-    color: '#FFB347', // Color amarillo para el valor
+    color: '#56ad45',
   },
   actions: {
     flexDirection: 'row',
-    alignItems: 'center',
   },
   iconButton: {
-    marginLeft: 10,
+    marginLeft: 8,
   },
 });
 

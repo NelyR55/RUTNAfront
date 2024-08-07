@@ -8,6 +8,7 @@ import Empleado from '../screens/Empleado';
 import VerAlumno from '../screens/VerAlumno';
 import VerEmpleado from '../screens/VerEmpleado';
 import VerRutas from '../screens/VerRutas';
+import EditarRuta from '../screens/EditarRuta';
 
 const Stack = createStackNavigator();
 
@@ -22,6 +23,7 @@ const AppNavigator = () => (
     <Stack.Screen name="VerRutas" component={VerRutas} />
     <Stack.Screen name="VerAlumno" component={VerAlumno} />
     <Stack.Screen name="VerEmpleado" component={VerEmpleado} />
+    <Stack.Screen name="EditarRuta" component={EditarRuta} />
   </Stack.Navigator>
 );
 

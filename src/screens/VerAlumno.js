@@ -1,16 +1,35 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ImageBackground, FlatList, TouchableOpacity, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
-
-const datos = [
-  { id: '1', nombre: 'Maria Villanueva', acciones: 'Editar', imagen: require('../../assets/Usuario.png') },
-  { id: '2', nombre: 'Nely Roríguez', acciones: 'Editar', imagen: require('../../assets/Usuario.png') },
-  // Agrega más datos aquí
-];
+import axios from 'axios';
 
 const VerAlumno = () => {
+  const [datos, setDatos] = useState([]);
   const navigation = useNavigation();
+
+  useEffect(() => {
+    const obtenerDatos = async () => {
+      try {
+        const respuesta = await axios.get('https://rutnaback-production.up.railway.app/user/obtenerAlumnos');
+        setDatos(respuesta.data);
+      } catch (error) {
+        console.error('Error al obtener los datos:', error);
+      }
+    };
+
+    obtenerDatos();
+  }, []);
+
+  const handleEdit = (id) => {
+    console.log(`Editar alumno con ID: ${id}`);
+    // Aquí puedes navegar a una pantalla de edición o mostrar un modal
+  };
+
+  const handleDelete = (id) => {
+    console.log(`Eliminar alumno con ID: ${id}`);
+    // Aquí puedes mostrar un mensaje de confirmación y luego eliminar el registro
+  };
 
   return (
     <ImageBackground 
@@ -27,16 +46,24 @@ const VerAlumno = () => {
         data={datos}
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <Image source={item.imagen} style={styles.image} />
+            <Image source={require('../../assets/Usuario.png')} style={styles.image} />
             <View style={styles.cardContent}>
-              <Text style={styles.nombre}>{item.nombre}</Text>
-              <TouchableOpacity onPress={() => console.log('Editar')}>
-                <Text style={styles.acciones}>{item.acciones}</Text>
-              </TouchableOpacity>
+              <View style={styles.textContainer}>
+                <Text style={styles.usuario}>{item.usuario}</Text>
+                <Text style={styles.saldo}>Saldo: ${item.saldo}</Text>
+              </View>
+              <View style={styles.iconContainer}>
+                  <TouchableOpacity onPress={() => handleEdit(item.id)} style={styles.iconButton}>
+                    <Icon name="pencil" size={24} color="#56ad45" />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.iconButton}>
+                    <Icon name="trash" size={24} color="#FF4D4D" />
+                  </TouchableOpacity>
+              </View>
             </View>
           </View>
         )}
-        keyExtractor={item => item.id}
+        keyExtractor={item => item.id.toString()}
       />
     </ImageBackground>
   );
@@ -51,8 +78,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 40, // Mayor margen superior para el encabezado
-    paddingBottom: 20, // Espacio debajo del título
+    paddingTop: 40,
+    paddingBottom: 20,
   },
   backButton: {
     padding: 10,
@@ -61,16 +88,15 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#000',
-    alignSelf: 'flex-start', // Alinea el título a la izquierda
+    alignSelf: 'flex-start',
     flex: 1,
-    marginLeft: 77, // Margen a la izquierda del título
+    marginLeft: 77,
   },
   card: {
     backgroundColor: '#fff',
     borderRadius: 8,
     padding: 16,
     marginVertical: 8,
-    marginTop: 20,  // Margen superior para las tarjetas
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: '#000',
@@ -87,17 +113,27 @@ const styles = StyleSheet.create({
   cardContent: {
     marginLeft: 16,
     flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
-  nombre: {
+  textContainer: {
+    flex: 1,
+  },
+  usuario: {
     fontSize: 18,
     color: '#000',
-    marginBottom: 4,
   },
-  acciones: {
+  saldo: {
     fontSize: 16,
-    color: '#FFB347',
+    color: '#888',
+  },
+  iconContainer: {
+    flexDirection: 'row',
+  },
+  icon: {
+    marginLeft: 10,
   },
 });
 
 export default VerAlumno;
-
