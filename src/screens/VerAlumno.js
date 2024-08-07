@@ -54,7 +54,7 @@ const VerAlumno = () => {
               </View>
               <View style={styles.iconContainer}>
                   <TouchableOpacity onPress={() => handleEdit(item.id)} style={styles.iconButton}>
-                    <Icon name="pencil" size={24} color="#56ad45" />
+                    <Icon name="add" size={24} color="#56ad45" />
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.iconButton}>
                     <Icon name="trash" size={24} color="#FF4D4D" />

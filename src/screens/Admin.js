@@ -1,41 +1,31 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ImageBackground, TouchableOpacity, Modal, FlatList, TextInput, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ImageBackground, TouchableOpacity, Modal, FlatList, TextInput, ScrollView, Alert } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import axios from 'axios';
 
-const roleOptions = ['Admin', 'Chofer','Alumno'];
+const roleOptions = ['Admin', 'Chofer', 'Alumno'];
 
 const CustomSelect = ({ selectedValue, onValueChange, options }) => {
   const [modalVisible, setModalVisible] = useState(false);
 
   return (
     <>
-      <TouchableOpacity
-        style={styles.selectButton}
-        onPress={() => setModalVisible(true)}
-      >
+      <TouchableOpacity style={styles.selectButton} onPress={() => setModalVisible(true)}>
         <Text style={styles.selectButtonText}>{selectedValue}</Text>
       </TouchableOpacity>
-
-      <Modal
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
+      <Modal transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <FlatList
               data={options}
               keyExtractor={(item) => item}
               renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.option}
-                  onPress={() => {
-                    onValueChange(item);
-                    setModalVisible(false);
-                  }}
-                >
+                <TouchableOpacity style={styles.option} onPress={() => {
+                  onValueChange(item);
+                  setModalVisible(false);
+                }}>
                   <Text style={styles.optionText}>{item}</Text>
                 </TouchableOpacity>
               )}
@@ -54,26 +44,17 @@ const Inicio = ({ navigation }) => (
       <Text style={styles.welcomeDescription}>RUTNA: Tu compañera de viaje para cada destino</Text>
     </View>
     <View style={styles.cardContainer}>
-      <TouchableOpacity
-        style={styles.smallCard}
-        onPress={() => navigation.navigate('VerAlumno')}
-      >
+      <TouchableOpacity style={styles.smallCard} onPress={() => navigation.navigate('VerAlumno')}>
         <MaterialCommunityIcons name="account-group" size={32} color="#FFB347" />
         <Text style={styles.cardTitle}>Ver Alumnos</Text>
         <Text style={styles.cardDescription}>Consulta el perfil de los alumnos registrados.</Text>
       </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.smallCard}
-        onPress={() => navigation.navigate('VerEmpleado')}
-      >
+      <TouchableOpacity style={styles.smallCard} onPress={() => navigation.navigate('VerEmpleado')}>
         <MaterialCommunityIcons name="map" size={32} color="#FFB347" />
         <Text style={styles.cardTitle}>Ver Empleados</Text>
         <Text style={styles.cardDescription}>Consulta el perfil de los empleados registrados.</Text>
       </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.smallCard}
-        onPress={() => navigation.navigate('VerRutas')}
-      >
+      <TouchableOpacity style={styles.smallCard} onPress={() => navigation.navigate('VerRutas')}>
         <MaterialCommunityIcons name="map-search" size={32} color="#FFB347" />
         <Text style={styles.cardTitle}>Ver Rutas</Text>
         <Text style={styles.cardDescription}>Accede a la lista completa de rutas.</Text>
@@ -81,7 +62,7 @@ const Inicio = ({ navigation }) => (
     </View>
   </ImageBackground>
 );
-//AGREGAR SALDO
+
 const AgregarSaldo = () => {
   const [usuario, setUsuario] = useState('');
   const [cantidad, setCantidad] = useState('');
@@ -97,10 +78,8 @@ const AgregarSaldo = () => {
       setCantidad('');
     } catch (error) {
       if (error.response) {
-        // Error del servidor
         Alert.alert('Error', error.response.data.error);
       } else {
-        // Error en la solicitud
         Alert.alert('Error', 'Error de conexión');
       }
     }
@@ -127,14 +106,8 @@ const AgregarSaldo = () => {
             value={cantidad}
             onChangeText={setCantidad}
           />
-          <LinearGradient
-            colors={['#FFB347', '#FFCC70']}
-            style={styles.button}
-          >
-            <TouchableOpacity
-              style={styles.buttonContent}
-              onPress={handleCargarSaldo}
-            >
+          <LinearGradient colors={['#FFB347', '#FFCC70']} style={styles.button}>
+            <TouchableOpacity style={styles.buttonContent} onPress={handleCargarSaldo}>
               <Text style={styles.buttonText}>Aceptar</Text>
             </TouchableOpacity>
           </LinearGradient>
@@ -143,50 +116,188 @@ const AgregarSaldo = () => {
     </ImageBackground>
   );
 };
-//AGREGAR USUARIO
 
 const AgregarUsuario = () => {
+  const [usuario, setUsuario] = useState('');
+  const [pass, setPass] = useState('');
+  const [saldo, setSaldo] = useState('');
   const [selectedRole, setSelectedRole] = useState('Rol');
+
+  const handleAgregarUsuario = async () => {
+    try {
+      const response = await axios.post('https://rutnaback-production.up.railway.app/user/registrarUsuario', {
+        usuario,
+        pass,
+        rol: selectedRole.toLowerCase(),
+        saldo
+      });
+      Alert.alert('Éxito', 'Usuario registrado correctamente');
+      setUsuario('');
+      setPass('');
+      setSaldo('');
+      setSelectedRole('Rol');
+    } catch (error) {
+      if (error.response) {
+        Alert.alert('Error', error.response.data.error);
+      } else {
+        Alert.alert('Error', 'Error de conexión');
+      }
+    }
+  };
 
   return (
     <ImageBackground source={require('../../assets/fondodef.png')} style={styles.screenContainer}>
       <View style={styles.cardContainer}>
         <View style={styles.card}>
           <MaterialCommunityIcons name="account-multiple-plus" size={48} color="#FFB347" />
-          <Text style={styles.cardTitle}>Agregar Empleado</Text>
+          <Text style={styles.cardTitle}>Agregar Usuario</Text>
           <TextInput
             style={styles.input}
             placeholder="Nombre de usuario"
             placeholderTextColor="#aaa"
+            value={usuario}
+            onChangeText={setUsuario}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Contraseña"
+            placeholderTextColor="#aaa"
+            secureTextEntry={true}
+            value={pass}
+            onChangeText={setPass}
           />
           <CustomSelect
             selectedValue={selectedRole}
             onValueChange={(value) => setSelectedRole(value)}
             options={roleOptions}
           />
-            <TextInput
-          style={styles.input}
-          placeholder="Saldo"
-          placeholderTextColor="#aaa"
-          keyboardType="numeric"
-        />
           <TextInput
             style={styles.input}
-            placeholder="Contraseña"
+            placeholder="Saldo"
             placeholderTextColor="#aaa"
-            secureTextEntry={true}
+            keyboardType="numeric"
+            value={saldo}
+            onChangeText={setSaldo}
           />
-          <LinearGradient
-            colors={['#FFB347', '#FFCC70']}
-            style={styles.button}
-          >
-            <TouchableOpacity
-              style={styles.buttonContent}
-              onPress={() => {}}
-            >
+          <LinearGradient colors={['#FFB347', '#FFCC70']} style={styles.button}>
+            <TouchableOpacity style={styles.buttonContent} onPress={handleAgregarUsuario}>
               <Text style={styles.buttonText}>Aceptar</Text>
             </TouchableOpacity>
           </LinearGradient>
+        </View>
+      </View>
+    </ImageBackground>
+  );
+};
+
+const VerAlumnos = () => {
+  const [alumnos, setAlumnos] = useState([]);
+
+  const fetchAlumnos = async () => {
+    try {
+      const response = await axios.get('https://rutnaback-production.up.railway.app/user/alumnos');
+      setAlumnos(response.data);
+    } catch (error) {
+      Alert.alert('Error', 'Error al obtener la lista de alumnos');
+    }
+  };
+
+  React.useEffect(() => {
+    fetchAlumnos();
+  }, []);
+
+  return (
+    <ImageBackground source={require('../../assets/fondodef.png')} style={styles.screenContainer}>
+      <View style={styles.cardContainer}>
+        <View style={styles.card}>
+          <MaterialCommunityIcons name="account-group" size={48} color="#FFB347" />
+          <Text style={styles.cardTitle}>Ver Alumnos</Text>
+          <FlatList
+            data={alumnos}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => (
+              <View style={styles.listItem}>
+                <Text style={styles.listItemText}>Usuario: {item.usuario}</Text>
+                <Text style={styles.listItemText}>Saldo: {item.saldo}</Text>
+              </View>
+            )}
+          />
+        </View>
+      </View>
+    </ImageBackground>
+  );
+};
+
+const VerEmpleados = () => {
+  const [empleados, setEmpleados] = useState([]);
+
+  const fetchEmpleados = async () => {
+    try {
+      const response = await axios.get('https://rutnaback-production.up.railway.app/user/admins');
+      setEmpleados(response.data);
+    } catch (error) {
+      Alert.alert('Error', 'Error al obtener la lista de empleados');
+    }
+  };
+
+  React.useEffect(() => {
+    fetchEmpleados();
+  }, []);
+
+  return (
+    <ImageBackground source={require('../../assets/fondodef.png')} style={styles.screenContainer}>
+      <View style={styles.cardContainer}>
+        <View style={styles.card}>
+          <MaterialCommunityIcons name="account-group" size={48} color="#FFB347" />
+          <Text style={styles.cardTitle}>Ver Empleados</Text>
+          <FlatList
+            data={empleados}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => (
+              <View style={styles.listItem}>
+                <Text style={styles.listItemText}>Usuario: {item.usuario}</Text>
+                <Text style={styles.listItemText}>Rol: {item.rol}</Text>
+              </View>
+            )}
+          />
+        </View>
+      </View>
+    </ImageBackground>
+  );
+};
+
+const VerRutas = () => {
+  const [rutas, setRutas] = useState([]);
+
+  const fetchRutas = async () => {
+    try {
+      const response = await axios.get('https://rutnaback-production.up.railway.app/ruta/verRutas');
+      setRutas(response.data);
+    } catch (error) {
+      Alert.alert('Error', 'Error al obtener la lista de rutas');
+    }
+  };
+
+  React.useEffect(() => {
+    fetchRutas();
+  }, []);
+
+  return (
+    <ImageBackground source={require('../../assets/fondodef.png')} style={styles.screenContainer}>
+      <View style={styles.cardContainer}>
+        <View style={styles.card}>
+          <MaterialCommunityIcons name="map-search" size={48} color="#FFB347" />
+          <Text style={styles.cardTitle}>Ver Rutas</Text>
+          <FlatList
+            data={rutas}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => (
+              <View style={styles.listItem}>
+                <Text style={styles.listItemText}>Destino: {item.destino}</Text>
+                <Text style={styles.listItemText}>Precio: {item.precio}</Text>
+              </View>
+            )}
+          />
         </View>
       </View>
     </ImageBackground>
@@ -195,6 +306,25 @@ const AgregarUsuario = () => {
 ///AGREGAR RUTA
 const AgregarRuta = () => {
   const [destino, setDestino] = useState('Ruta');
+  const [precio, setPrecio] = useState('');
+
+  const handleAgregarRuta = async () => {
+    try {
+      const response = await axios.post('https://rutnaback-production.up.railway.app/rutas/agregar', {
+        destino,
+        precio
+      });
+      Alert.alert('Éxito', 'Ruta agregada correctamente');
+      setDestino('Ruta');
+      setPrecio('');
+    } catch (error) {
+      if (error.response) {
+        Alert.alert('Error', error.response.data.error);
+      } else {
+        Alert.alert('Error', 'Error de conexión');
+      }
+    }
+  };
 
   return (
     <ImageBackground source={require('../../assets/fondodef.png')} style={styles.screenContainer}>
@@ -205,13 +335,15 @@ const AgregarRuta = () => {
           <CustomSelect
             selectedValue={destino}
             onValueChange={(value) => setDestino(value)}
-            options={['Aguascalientes', 'Asientos', 'Loreto', 'Ojocaliente', 'Villa García']}
+            options={['Aguascalientes', 'Asientos', 'Loreto', 'Ojocaliente', 'Villa García','Luis Moya','San Pancho','Margaritas','Bimbaletes','Cosio']}
           />
           <TextInput
             style={styles.input}
             placeholder="Precio"
             placeholderTextColor="#aaa"
             keyboardType="numeric"
+            value={precio}
+            onChangeText={setPrecio}
           />
           <LinearGradient
             colors={['#FFB347', '#FFCC70']}
@@ -219,7 +351,7 @@ const AgregarRuta = () => {
           >
             <TouchableOpacity
               style={styles.buttonContent}
-              onPress={() => {}}
+              onPress={handleAgregarRuta}
             >
               <Text style={styles.buttonText}>Aceptar</Text>
             </TouchableOpacity>
@@ -503,3 +635,4 @@ const styles = StyleSheet.create({
 });
 
 export default Admin;
+

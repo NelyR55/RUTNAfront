@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ImageBackground, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from 'react-native-vector-icons';
 import axios from 'axios';
 
 const EditarRuta = ({ route, navigation }) => {
   const { id } = route.params;
   const [precio, setPrecio] = useState('');
-  const [destino, setDestino] = useState('');
 
   useEffect(() => {
     const fetchRuta = async () => {
       try {
         const response = await axios.get(`https://rutnaback-production.up.railway.app/rutas/${id}`);
         const ruta = response.data;
-        setDestino(ruta.destino); // Asumiendo que el objeto tiene una propiedad 'destino'
         setPrecio(ruta.precio.toString()); // Convierte a cadena para el input
       } catch (error) {
         Alert.alert('Error', `Error al obtener la ruta: ${error.message}`);
@@ -52,13 +50,6 @@ const EditarRuta = ({ route, navigation }) => {
         <View style={styles.card}>
           <MaterialCommunityIcons name="map-marker-plus" size={48} color="#FFB347" style={styles.icon} />
           <Text style={styles.cardTitle}>Editar Ruta</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Destino"
-            placeholderTextColor="#aaa"
-            value={destino}
-            editable={false} // Deshabilitado para que no se pueda editar
-          />
           <TextInput
             style={styles.input}
             placeholder="Precio"
@@ -146,4 +137,3 @@ const styles = StyleSheet.create({
 });
 
 export default EditarRuta;
-
