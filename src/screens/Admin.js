@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const roleOptions = ['Admin', 'Chofer'];
+const roleOptions = ['Admin', 'Chofer','Alumno'];
 
 const CustomSelect = ({ selectedValue, onValueChange, options }) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -115,46 +115,8 @@ const AgregarSaldo = () => (
   </ImageBackground>
 );
 
-const AgregarAlumno = () => (
-  <ImageBackground source={require('../../assets/fondodef.png')} style={styles.screenContainer}>
-    <View style={styles.cardContainer}>
-      <View style={styles.card}>
-        <MaterialCommunityIcons name="account-plus" size={48} color="#FFB347" />
-        <Text style={styles.cardTitle}>Registrar Alumno</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Matrícula"
-          placeholderTextColor="#aaa"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Saldo"
-          placeholderTextColor="#aaa"
-          keyboardType="numeric"
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Contraseña"
-          placeholderTextColor="#aaa"
-          secureTextEntry={true}
-        />
-        <LinearGradient
-          colors={['#FFB347', '#FFCC70']}
-          style={styles.button}
-        >
-          <TouchableOpacity
-            style={styles.buttonContent}
-            onPress={() => {}}
-          >
-            <Text style={styles.buttonText}>Aceptar</Text>
-          </TouchableOpacity>
-        </LinearGradient>
-      </View>
-    </View>
-  </ImageBackground>
-);
 
-const AgregarEmpleado = () => {
+const AgregarUsuario = () => {
   const [selectedRole, setSelectedRole] = useState('Rol');
 
   return (
@@ -173,6 +135,12 @@ const AgregarEmpleado = () => {
             onValueChange={(value) => setSelectedRole(value)}
             options={roleOptions}
           />
+            <TextInput
+          style={styles.input}
+          placeholder="Saldo"
+          placeholderTextColor="#aaa"
+          keyboardType="numeric"
+        />
           <TextInput
             style={styles.input}
             placeholder="Contraseña"
@@ -275,9 +243,7 @@ const Admin = () => (
         let iconName;
         if (route.name === 'Inicio') {
           iconName = 'home';
-        } else if (route.name === 'AgregarAlumno') {
-          iconName = 'account-plus';
-        } else if (route.name === 'AgregarEmpleado') {
+        } else if (route.name === 'AgregarUsuario') {
           iconName = 'account-multiple-plus';
         } else if (route.name === 'AgregarRuta') {
           iconName = 'map-marker-plus';
@@ -297,8 +263,7 @@ const Admin = () => (
     })}
   >
     <Tab.Screen name="Inicio" component={Inicio} />
-    <Tab.Screen name="AgregarAlumno" component={AgregarAlumno} />
-    <Tab.Screen name="AgregarEmpleado" component={AgregarEmpleado} />
+    <Tab.Screen name="AgregarUsuario" component={AgregarUsuario} />
     <Tab.Screen name="AgregarRuta" component={AgregarRuta} />
     <Tab.Screen name="Actividad" component={Actividad} />
   </Tab.Navigator>
@@ -324,7 +289,7 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: 'center',
     width: 300,
-    height: 400,
+    height: 450,
     backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },

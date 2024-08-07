@@ -1,18 +1,25 @@
-import React from 'react';
-import { View, Text, StyleSheet, ImageBackground, FlatList, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ImageBackground, FlatList, TouchableOpacity, Image, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
-
-const datos = [
-  { id: '1', nombre: 'Aguascalientes', acciones: 'Editar', imagen: require('../../assets/Ruta.png') },
-  { id: '2', nombre: 'Asientos', acciones: 'Editar', imagen: require('../../assets/Ruta.png') },
-  { id: '3', nombre: 'Loreto', acciones: 'Editar', imagen: require('../../assets/Ruta.png') },
-  { id: '4', nombre: 'Ojocaliente', acciones: 'Editar', imagen: require('../../assets/Ruta.png') },
-  { id: '5', nombre: 'Villa García', acciones: 'Editar', imagen: require('../../assets/Ruta.png') },
-];
+import axios from 'axios';
 
 const VerRutas = () => {
+  const [rutas, setRutas] = useState([]);
   const navigation = useNavigation();
+
+  useEffect(() => {
+    const fetchRutas = async () => {
+      try {
+        const response = await axios.get('https://rutnaback-production.up.railway.app/rutas');
+        setRutas(response.data);
+      } catch (error) {
+        Alert.alert('Error', 'No se pudieron cargar las rutas.');
+      }
+    };
+
+    fetchRutas();
+  }, []);
 
   return (
     <ImageBackground 
@@ -26,19 +33,20 @@ const VerRutas = () => {
         <Text style={styles.title}>Historial</Text>
       </View>
       <FlatList
-        data={datos}
+        data={rutas}
         renderItem={({ item }) => (
           <View style={styles.card}>
-            <Image source={item.imagen} style={styles.image} />
+            <Image source={require('../../assets/Ruta.png')} style={styles.image} />
             <View style={styles.cardContent}>
-              <Text style={styles.nombre}>{item.nombre}</Text>
+              <Text style={styles.nombre}>{item.destino}</Text>
+              <Text style={styles.precio}>Precio: ${item.precio}</Text>
               <TouchableOpacity onPress={() => console.log('Editar')}>
-                <Text style={styles.acciones}>{item.acciones}</Text>
+                <Text style={styles.acciones}>Editar</Text>
               </TouchableOpacity>
             </View>
           </View>
         )}
-        keyExtractor={item => item.id}
+        keyExtractor={item => item.id.toString()}
       />
     </ImageBackground>
   );
@@ -53,8 +61,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 40, // Mayor margen superior para el encabezado
-    paddingBottom: 20, // Espacio debajo del título
+    paddingTop: 40,
+    paddingBottom: 20,
   },
   backButton: {
     padding: 10,
@@ -63,16 +71,16 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#000',
-    alignSelf: 'flex-start', // Alinea el título a la izquierda
+    alignSelf: 'flex-start',
     flex: 1,
-    marginLeft: 77, // Margen a la izquierda del título
+    marginLeft: 77,
   },
   card: {
     backgroundColor: '#fff',
     borderRadius: 8,
     padding: 16,
     marginVertical: 8,
-    marginTop: 20,  // Margen superior para las tarjetas
+    marginTop: 20,
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: '#000',
@@ -95,6 +103,11 @@ const styles = StyleSheet.create({
     color: '#000',
     marginBottom: 4,
   },
+  precio: {
+    fontSize: 16,
+    color: '#333',
+    marginBottom: 8,
+  },
   acciones: {
     fontSize: 16,
     color: '#FFB347',
@@ -102,4 +115,3 @@ const styles = StyleSheet.create({
 });
 
 export default VerRutas;
-
