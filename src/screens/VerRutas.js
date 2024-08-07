@@ -1,25 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ImageBackground, FlatList, TouchableOpacity, Image, Alert } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ImageBackground, FlatList, TouchableOpacity, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 
 const VerRutas = () => {
-  const [rutas, setRutas] = useState([]);
+  const [datos, setDatos] = useState([]);
   const navigation = useNavigation();
 
   useEffect(() => {
     const fetchRutas = async () => {
       try {
         const response = await axios.get('https://rutnaback-production.up.railway.app/rutas');
-        setRutas(response.data);
+        setDatos(response.data);
       } catch (error) {
-        Alert.alert('Error', 'No se pudieron cargar las rutas.');
+        console.error('Error fetching data', error);
       }
     };
 
     fetchRutas();
   }, []);
+
+  const handleEdit = (id) => {
+    console.log(`Editar ruta con id ${id}`);
+    // Aquí puedes agregar la lógica para editar la ruta
+  };
+
+  const handleDelete = (id) => {
+    console.log(`Eliminar ruta con id ${id}`);
+    // Aquí puedes agregar la lógica para eliminar la ruta
+  };
 
   return (
     <ImageBackground 
@@ -33,16 +43,26 @@ const VerRutas = () => {
         <Text style={styles.title}>Historial</Text>
       </View>
       <FlatList
-        data={rutas}
+        data={datos}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Image source={require('../../assets/Ruta.png')} style={styles.image} />
             <View style={styles.cardContent}>
-              <Text style={styles.nombre}>{item.destino}</Text>
-              <Text style={styles.precio}>Precio: ${item.precio}</Text>
-              <TouchableOpacity onPress={() => console.log('Editar')}>
-                <Text style={styles.acciones}>Editar</Text>
-              </TouchableOpacity>
+              <View style={styles.cardHeader}>
+                <Text style={styles.nombre}>{item.destino}</Text>
+                <View style={styles.actions}>
+                  <TouchableOpacity onPress={() => handleEdit(item.id)} style={styles.iconButton}>
+                    <Icon name="pencil" size={24} color="#56ad45" />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.iconButton}>
+                    <Icon name="trash" size={24} color="#FF4D4D" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <Text style={styles.precio}>
+                <Text style={styles.precioLabel}>Precio: </Text>
+                <Text style={styles.precioValue}>${item.precio}</Text>
+              </Text>
             </View>
           </View>
         )}
@@ -98,6 +118,11 @@ const styles = StyleSheet.create({
     marginLeft: 16,
     flex: 1,
   },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   nombre: {
     fontSize: 18,
     color: '#000',
@@ -105,12 +130,21 @@ const styles = StyleSheet.create({
   },
   precio: {
     fontSize: 16,
-    color: '#333',
+    color: '#000',
     marginBottom: 8,
   },
-  acciones: {
-    fontSize: 16,
-    color: '#FFB347',
+  precioLabel: {
+    color: '#000', // Color negro para la palabra 'Precio'
+  },
+  precioValue: {
+    color: '#FFB347', // Color amarillo para el valor
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconButton: {
+    marginLeft: 10,
   },
 });
 
