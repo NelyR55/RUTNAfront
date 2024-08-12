@@ -38,7 +38,6 @@ const CustomSelect = ({ selectedValue, onValueChange, options }) => {
     </>
   );
 };
-///INICIO
 const Inicio = ({ navigation }) => (
   <ImageBackground source={require('../../assets/fondodef.png')} style={styles.screenContainer}>
     <View style={styles.textContainer}>
@@ -64,6 +63,8 @@ const Inicio = ({ navigation }) => (
     </View>
   </ImageBackground>
 );
+
+
 //SALDO
 const AgregarSaldo = () => {
   const [usuario, setUsuario] = useState('');
@@ -404,20 +405,40 @@ const VerRutas = () => {
   );
 };
 ///AGREGAR RUTA
+
 const AgregarRuta = () => {
   const [destino, setDestino] = useState('Ruta');
   const [precio, setPrecio] = useState('');
 
   const handleAgregarRuta = async () => {
     try {
-      const response = await axios.post('https://rutnaback-production.up.railway.app/rutas/agregar', {
-        destino,
-        precio
-      });
+      const token = await AsyncStorage.getItem('token');
+
+      if (!token) {
+        Alert.alert('Error', 'Token de autenticación no encontrado');
+        return;
+      }
+
+      console.log('Token:', token); // Para depuración
+
+      const response = await axios.post(
+        'https://rutnaback-production.up.railway.app/rutas/agregar',
+        {
+          destino,
+          precio
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
       Alert.alert('Éxito', 'Ruta agregada correctamente');
       setDestino('Ruta');
       setPrecio('');
     } catch (error) {
+      console.error('Error al agregar la ruta:', error); // Log para depuración
       if (error.response) {
         Alert.alert('Error', error.response.data.error);
       } else {
@@ -427,15 +448,33 @@ const AgregarRuta = () => {
   };
 
   return (
-    <ImageBackground source={require('../../assets/fondodef.png')} style={styles.screenContainer}>
+    <ImageBackground
+      source={require('../../assets/fondodef.png')}
+      style={styles.screenContainer}
+    >
       <View style={styles.cardContainer}>
         <View style={styles.card}>
-          <MaterialCommunityIcons name="map-marker-plus" size={48} color="#FFB347" />
+          <MaterialCommunityIcons
+            name="map-marker-plus"
+            size={48}
+            color="#FFB347"
+          />
           <Text style={styles.cardTitle}>Agregar Ruta</Text>
           <CustomSelect
             selectedValue={destino}
             onValueChange={(value) => setDestino(value)}
-            options={['Aguascalientes', 'Asientos', 'Loreto', 'Ojocaliente', 'Villa García','Luis Moya','San Pancho','Margaritas','Bimbaletes','Cosio']}
+            options={[
+              'Aguascalientes',
+              'Asientos',
+              'Loreto',
+              'Ojocaliente',
+              'Villa García',
+              'Luis Moya',
+              'San Pancho',
+              'Margaritas',
+              'Bimbaletes',
+              'Cosio'
+            ]}
           />
           <TextInput
             style={styles.input}
@@ -445,10 +484,7 @@ const AgregarRuta = () => {
             value={precio}
             onChangeText={setPrecio}
           />
-          <LinearGradient
-            colors={['#FFB347', '#FFCC70']}
-            style={styles.button}
-          >
+          <LinearGradient colors={['#FFB347', '#FFCC70']} style={styles.button}>
             <TouchableOpacity
               style={styles.buttonContent}
               onPress={handleAgregarRuta}
@@ -461,6 +497,7 @@ const AgregarRuta = () => {
     </ImageBackground>
   );
 };
+
 ////ACTIVIDAD
 const Actividad = () => {
   const [logs, setLogs] = useState([]);
@@ -742,6 +779,21 @@ const styles = StyleSheet.create({
     width: '33%',
     textAlign: 'center',
   },
+  logoutButtonContainer: {
+    marginTop: 'auto',
+    paddingBottom: 16,
+  },
+  logoutButton: {
+    backgroundColor: '#FFB347',
+    padding: 8,
+    borderRadius: 4,
+  },
+  logoutButtonText: {
+    color: '#000',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+
 });
 
 export default Admin;
