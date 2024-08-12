@@ -4,6 +4,7 @@ import { StyleSheet, Text, View, ImageBackground, TouchableOpacity, Alert } from
 import { TextInput, GestureHandlerRootView } from "react-native-gesture-handler";
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 
 export default function Login() {
@@ -21,8 +22,11 @@ export default function Login() {
       console.log('Response:', response.data); // Log de la respuesta
 
       if (response.status === 200) {
-        const { rol } = response.data;
+        const { token, rol } = response.data;
         console.log('Role:', rol); // Log del rol
+
+        // Almacenar el token en AsyncStorage
+        await AsyncStorage.setItem('token', token);
 
         if (rol === 'admin') {
           navigation.navigate('Admin');

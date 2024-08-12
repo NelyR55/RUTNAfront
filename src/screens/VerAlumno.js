@@ -1,8 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ImageBackground, FlatList, TouchableOpacity, Image } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ImageBackground,
+  FlatList,
+  TouchableOpacity,
+  Image,
+  Alert
+} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const VerAlumno = () => {
   const [datos, setDatos] = useState([]);
@@ -11,7 +21,9 @@ const VerAlumno = () => {
   useEffect(() => {
     const obtenerDatos = async () => {
       try {
-        const respuesta = await axios.get('https://rutnaback-production.up.railway.app/user/obtenerAlumnos');
+        const respuesta = await axios.get(
+          'https://rutnaback-production.up.railway.app/user/obtenerAlumnos'
+        );
         setDatos(respuesta.data);
       } catch (error) {
         console.error('Error al obtener los datos:', error);
@@ -21,23 +33,64 @@ const VerAlumno = () => {
     obtenerDatos();
   }, []);
 
-  const handleEdit = (id) => {
-    console.log(`Editar alumno con ID: ${id}`);
-    // Aquí puedes navegar a una pantalla de edición o mostrar un modal
-  };
-
   const handleDelete = (id) => {
-    console.log(`Eliminar alumno con ID: ${id}`);
-    // Aquí puedes mostrar un mensaje de confirmación y luego eliminar el registro
+    Alert.alert(
+      'Eliminar Alumno',
+      '¿Estás seguro de que deseas eliminar este alumno?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel'
+        },
+        {
+          text: 'Eliminar',
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem('token');
+
+              if (!token) {
+                Alert.alert('Error', 'Token de autenticación no encontrado');
+                return;
+              }
+
+              console.log('Token:', token); // Para depuración
+
+              await axios.delete(
+                `https://rutnaback-production.up.railway.app/user/eliminarUsuario/${id}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`
+                  }
+                }
+              );
+
+              setDatos(datos.filter((alumno) => alumno.id !== id));
+              Alert.alert('Éxito', 'Alumno eliminado correctamente');
+            } catch (error) {
+              console.error('Error al eliminar el alumno:', error);
+              Alert.alert(
+                'Error',
+                'No se pudo eliminar el alumno. Por favor, intenta nuevamente.'
+              );
+            }
+          },
+          style: 'destructive'
+        }
+      ],
+      { cancelable: false }
+    );
   };
 
   return (
-    <ImageBackground 
-      source={require('../../assets/fondodef.png')} 
+    <ImageBackground
+      source={require('../../assets/fondodef.png')}
       style={styles.container}
     >
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Admin')}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.navigate('Admin')}
+        >
           <Icon name="arrow-back" size={30} color="#000" />
         </TouchableOpacity>
         <Text style={styles.title}>Historial</Text>
@@ -53,17 +106,17 @@ const VerAlumno = () => {
                 <Text style={styles.saldo}>Saldo: ${item.saldo}</Text>
               </View>
               <View style={styles.iconContainer}>
-                  <TouchableOpacity onPress={() => handleEdit(item.id)} style={styles.iconButton}>
-                    <Icon name="add" size={24} color="#56ad45" />
-                  </TouchableOpacity>
-                  <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.iconButton}>
-                    <Icon name="trash" size={24} color="#FF4D4D" />
-                  </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => handleDelete(item.id)}
+                  style={styles.iconButton}
+                >
+                  <Icon name="trash" size={24} color="#FF4D4D" />
+                </TouchableOpacity>
               </View>
             </View>
           </View>
         )}
-        keyExtractor={item => item.id.toString()}
+        keyExtractor={(item) => item.id.toString()}
       />
     </ImageBackground>
   );
@@ -72,17 +125,17 @@ const VerAlumno = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: 16
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: 40,
-    paddingBottom: 20,
+    paddingBottom: 20
   },
   backButton: {
-    padding: 10,
+    padding: 10
   },
   title: {
     fontSize: 24,
@@ -90,7 +143,7 @@ const styles = StyleSheet.create({
     color: '#000',
     alignSelf: 'flex-start',
     flex: 1,
-    marginLeft: 77,
+    marginLeft: 77
   },
   card: {
     backgroundColor: '#fff',
@@ -103,37 +156,37 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.8,
     shadowRadius: 2,
-    elevation: 5,
+    elevation: 5
   },
   image: {
     width: 50,
     height: 50,
-    borderRadius: 25,
+    borderRadius: 25
   },
   cardContent: {
     marginLeft: 16,
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'center'
   },
   textContainer: {
-    flex: 1,
+    flex: 1
   },
   usuario: {
     fontSize: 18,
-    color: '#000',
+    color: '#000'
   },
   saldo: {
     fontSize: 16,
-    color: '#888',
+    color: '#888'
   },
   iconContainer: {
-    flexDirection: 'row',
+    flexDirection: 'row'
   },
-  icon: {
-    marginLeft: 10,
-  },
+  iconButton: {
+    marginLeft: 10
+  }
 });
 
 export default VerAlumno;

@@ -1,8 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ImageBackground, FlatList, TouchableOpacity, Image } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ImageBackground,
+  FlatList,
+  TouchableOpacity,
+  Image,
+  Alert
+} from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const VerRutas = () => {
   const [datos, setDatos] = useState([]);
@@ -11,7 +21,9 @@ const VerRutas = () => {
   useEffect(() => {
     const fetchRutas = async () => {
       try {
-        const response = await axios.get('https://rutnaback-production.up.railway.app/rutas');
+        const response = await axios.get(
+          'https://rutnaback-production.up.railway.app/rutas'
+        );
         setDatos(response.data);
       } catch (error) {
         console.error('Error fetching data', error);
@@ -22,21 +34,73 @@ const VerRutas = () => {
   }, []);
 
   const handleEdit = (id) => {
-    navigation.navigate('EditarRuta', { id });
+    const ruta = datos.find((item) => item.id === id);
+    if (ruta) {
+      navigation.navigate('EditarRuta', { id, destino: ruta.destino });
+    } else {
+      Alert.alert('Error', 'Ruta no encontrada');
+    }
   };
+  
 
   const handleDelete = (id) => {
-    console.log(`Eliminar ruta con id ${id}`);
-    // Aquí puedes agregar la lógica para eliminar la ruta
+    Alert.alert(
+      'Eliminar Ruta',
+      '¿Estás seguro de que deseas eliminar esta ruta?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel'
+        },
+        {
+          text: 'Eliminar',
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem('token'); // Obtener el token
+
+              if (!token) {
+                Alert.alert('Error', 'Token de autenticación no encontrado');
+                return;
+              }
+
+              console.log('Token:', token); // Imprimir el token para depuración
+
+              await axios.delete(
+                `https://rutnaback-production.up.railway.app/rutas/eliminar/${id}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}` // Asegúrate de incluir el token en el encabezado
+                  }
+                }
+              );
+
+              setDatos(datos.filter((ruta) => ruta.id !== id));
+              Alert.alert('Éxito', 'Ruta eliminada correctamente');
+            } catch (error) {
+              console.error('Error al eliminar la ruta:', error);
+              Alert.alert(
+                'Error',
+                'No se pudo eliminar la ruta. Por favor, intenta nuevamente.'
+              );
+            }
+          },
+          style: 'destructive'
+        }
+      ],
+      { cancelable: false }
+    );
   };
 
   return (
-    <ImageBackground 
-      source={require('../../assets/fondodef.png')} 
+    <ImageBackground
+      source={require('../../assets/fondodef.png')}
       style={styles.container}
     >
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Admin')}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.navigate('Admin')}
+        >
           <Icon name="arrow-back" size={30} color="#000" />
         </TouchableOpacity>
         <Text style={styles.title}>Historial</Text>
@@ -50,10 +114,16 @@ const VerRutas = () => {
               <View style={styles.cardHeader}>
                 <Text style={styles.nombre}>{item.destino}</Text>
                 <View style={styles.actions}>
-                  <TouchableOpacity onPress={() => handleEdit(item.id)} style={styles.iconButton}>
+                  <TouchableOpacity
+                    onPress={() => handleEdit(item.id)}
+                    style={styles.iconButton}
+                  >
                     <Icon name="pencil" size={24} color="#56ad45" />
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.iconButton}>
+                  <TouchableOpacity
+                    onPress={() => handleDelete(item.id)}
+                    style={styles.iconButton}
+                  >
                     <Icon name="trash" size={24} color="#FF4D4D" />
                   </TouchableOpacity>
                 </View>
@@ -65,7 +135,7 @@ const VerRutas = () => {
             </View>
           </View>
         )}
-        keyExtractor={item => item.id.toString()}
+        keyExtractor={(item) => item.id.toString()}
       />
     </ImageBackground>
   );

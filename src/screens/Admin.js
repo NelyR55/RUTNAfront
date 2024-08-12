@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, StyleSheet, ImageBackground, TouchableOpacity, Modal, FlatList, TextInput, ScrollView, Alert } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import axios from 'axios';
+
 
 const roleOptions = ['Admin', 'Chofer', 'Alumno'];
 
@@ -36,7 +38,7 @@ const CustomSelect = ({ selectedValue, onValueChange, options }) => {
     </>
   );
 };
-
+///INICIO
 const Inicio = ({ navigation }) => (
   <ImageBackground source={require('../../assets/fondodef.png')} style={styles.screenContainer}>
     <View style={styles.textContainer}>
@@ -62,17 +64,30 @@ const Inicio = ({ navigation }) => (
     </View>
   </ImageBackground>
 );
-
+//SALDO
 const AgregarSaldo = () => {
   const [usuario, setUsuario] = useState('');
   const [cantidad, setCantidad] = useState('');
 
   const handleCargarSaldo = async () => {
     try {
+      // Obtener el token de AsyncStorage
+      const token = await AsyncStorage.getItem('token');
+
+      if (!token) {
+        Alert.alert('Error', 'No estás autenticado');
+        return;
+      }
+
       const response = await axios.post('https://rutnaback-production.up.railway.app/user/cargarSaldo', {
         usuario,
         cantidad
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
+
       Alert.alert('Éxito', 'Saldo cargado correctamente');
       setUsuario('');
       setCantidad('');
@@ -116,7 +131,7 @@ const AgregarSaldo = () => {
     </ImageBackground>
   );
 };
-
+// AGREGAR USUARIO 
 const AgregarUsuario = () => {
   const [usuario, setUsuario] = useState('');
   const [pass, setPass] = useState('');
@@ -189,7 +204,6 @@ const AgregarUsuario = () => {
     </ImageBackground>
   );
 };
-
 const VerAlumnos = () => {
   const [alumnos, setAlumnos] = useState([]);
 
@@ -265,41 +279,127 @@ const VerEmpleados = () => {
     </ImageBackground>
   );
 };
-
+//VER RUTAS
 const VerRutas = () => {
-  const [rutas, setRutas] = useState([]);
+  const [datos, setDatos] = useState([]);
+  const navigation = useNavigation();
 
-  const fetchRutas = async () => {
-    try {
-      const response = await axios.get('https://rutnaback-production.up.railway.app/ruta/verRutas');
-      setRutas(response.data);
-    } catch (error) {
-      Alert.alert('Error', 'Error al obtener la lista de rutas');
-    }
-  };
+  useEffect(() => {
+    const fetchRutas = async () => {
+      try {
+        const response = await axios.get(
+          'https://rutnaback-production.up.railway.app/rutas'
+        );
+        setDatos(response.data);
+      } catch (error) {
+        console.error('Error fetching data', error);
+      }
+    };
 
-  React.useEffect(() => {
     fetchRutas();
   }, []);
 
+  const handleEdit = (id) => {
+    const ruta = datos.find((item) => item.id === id);
+    if (ruta) {
+      navigation.navigate('EditarRuta', { id, destino: ruta.destino });
+    } else {
+      Alert.alert('Error', 'Ruta no encontrada');
+    }
+  };
+
+  const handleDelete = (id) => {
+    Alert.alert(
+      'Eliminar Ruta',
+      '¿Estás seguro de que deseas eliminar esta ruta?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel'
+        },
+        {
+          text: 'Eliminar',
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem('token'); // Obtener el token
+
+              if (!token) {
+                Alert.alert('Error', 'Token de autenticación no encontrado');
+                return;
+              }
+
+              await axios.delete(
+                `https://rutnaback-production.up.railway.app/rutas/eliminar/${id}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`// Incluir el token en el encabezado
+                  }
+                }
+              );
+
+              setDatos(datos.filter((ruta) => ruta.id !== id));
+              Alert.alert('Éxito', 'Ruta eliminada correctamente');
+            } catch (error) {
+              console.error('Error al eliminar la ruta:', error);
+              Alert.alert(
+                'Error',
+                'No se pudo eliminar la ruta. Por favor, intenta nuevamente.'
+              );
+            }
+          },
+          style: 'destructive'
+        }
+      ],
+      { cancelable: false }
+    );
+  };
+
   return (
-    <ImageBackground source={require('../../assets/fondodef.png')} style={styles.screenContainer}>
-      <View style={styles.cardContainer}>
-        <View style={styles.card}>
-          <MaterialCommunityIcons name="map-search" size={48} color="#FFB347" />
-          <Text style={styles.cardTitle}>Ver Rutas</Text>
-          <FlatList
-            data={rutas}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <View style={styles.listItem}>
-                <Text style={styles.listItemText}>Destino: {item.destino}</Text>
-                <Text style={styles.listItemText}>Precio: {item.precio}</Text>
-              </View>
-            )}
-          />
-        </View>
+    <ImageBackground
+      source={require('../../assets/fondodef.png')}
+      style={styles.container}
+    >
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.navigate('Admin')}
+        >
+          <Icon name="arrow-back" size={30} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Historial</Text>
       </View>
+      <FlatList
+        data={datos}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Image source={require('../../assets/Ruta.png')} style={styles.image} />
+            <View style={styles.cardContent}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.nombre}>{item.destino}</Text>
+                <View style={styles.actions}>
+                  <TouchableOpacity
+                    onPress={() => handleEdit(item.id)}
+                    style={styles.iconButton}
+                  >
+                    <Icon name="pencil" size={24} color="#56ad45" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => handleDelete(item.id)}
+                    style={styles.iconButton}
+                  >
+                    <Icon name="trash" size={24} color="#FF4D4D" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <Text style={styles.precio}>
+                <Text style={styles.precioLabel}>Precio: </Text>
+                <Text style={styles.precioValue}>${item.precio}</Text>
+              </Text>
+            </View>
+          </View>
+        )}
+        keyExtractor={(item) => item.id.toString()}
+      />
     </ImageBackground>
   );
 };
@@ -363,30 +463,40 @@ const AgregarRuta = () => {
 };
 ////ACTIVIDAD
 const Actividad = () => {
-  const tableData = [
-    { usuario: 'Alumno', actividad: 'Compra de boleto', fecha: '01/08/2023' },
-    { usuario: 'Admin', actividad: 'Consulta de saldo', fecha: '02/08/2023' },
-    { usuario: 'Empleado', actividad: 'Registro de ruta', fecha: '03/08/2023' },
-    // Agrega más datos según sea necesario
-  ];
+  const [logs, setLogs] = useState([]);
+  const apiUrl = 'https://rutnaback-production.up.railway.app/user/logs'; // Asegúrate de usar la URL correcta
+
+  useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        const response = await axios.get(apiUrl);
+        setLogs(response.data);
+      } catch (error) {
+        console.error('Error fetching data', error);
+      }
+    };
+
+    fetchLogs();
+  }, []);
 
   return (
     <ImageBackground source={require('../../assets/fondodef.png')} style={styles.screenContainer}>
-       <View style={styles.textContainer}>
-      <Text style={styles.welcomeDescription2}>Verifica los detalles de cada transacción realizada en  </Text><Text style={styles.welcomeTitle2}>RUTNA</Text>
-    </View>
+      <View style={styles.textContainer}>
+        <Text style={styles.welcomeDescription2}>Verifica los detalles de cada transacción realizada en  </Text>
+        <Text style={styles.welcomeTitle2}>RUTNA</Text>
+      </View>
       <ScrollView contentContainerStyle={styles.scrollViewContainer}>
         <View style={styles.tableContainer}>
           <View style={styles.tableHeader}>
-            <Text style={styles.tableHeaderText}>Usuario</Text>
-            <Text style={styles.tableHeaderText}>Actividad</Text>
+            <Text style={styles.tableHeaderText}>Acción</Text>
+            <Text style={styles.tableHeaderText}>Detalle</Text>
             <Text style={styles.tableHeaderText}>Fecha</Text>
           </View>
-          {tableData.map((row, index) => (
+          {logs.map((log, index) => (
             <View key={index} style={styles.tableRow}>
-              <Text style={styles.tableRowText}>{row.usuario}</Text>
-              <Text style={styles.tableRowText}>{row.actividad}</Text>
-              <Text style={styles.tableRowText}>{row.fecha}</Text>
+              <Text style={styles.tableRowText}>{log.accion}</Text>
+              <Text style={styles.tableRowText}>{log.detalle}</Text>
+              <Text style={styles.tableRowText}>{log.fecha}</Text>
             </View>
           ))}
         </View>
@@ -635,4 +745,3 @@ const styles = StyleSheet.create({
 });
 
 export default Admin;
-

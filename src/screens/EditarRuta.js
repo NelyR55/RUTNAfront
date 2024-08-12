@@ -1,21 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ImageBackground, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { MaterialCommunityIcons } from 'react-native-vector-icons';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const EditarRuta = ({ route, navigation }) => {
-  const { id } = route.params;
+  const { id, destino: destinoProp } = route.params;
   const [precio, setPrecio] = useState('');
+  const [destino, setDestino] = useState(destinoProp || '');
 
   useEffect(() => {
     const fetchRuta = async () => {
       try {
-        const response = await axios.get(`https://rutnaback-production.up.railway.app/rutas/${id}`);
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+          Alert.alert('Error', 'No se ha encontrado el token de autenticación');
+          return;
+        }
+
+        const response = await axios.get(`https://rutnaback-production.up.railway.app/rutas/actualizar/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
         const ruta = response.data;
-        setPrecio(ruta.precio.toString()); // Convierte a cadena para el input
+        setPrecio(ruta.precio.toString());
+        // Aquí no es necesario volver a establecer destino ya que lo pasamos como prop
       } catch (error) {
-        Alert.alert('Error', `Error al obtener la ruta: ${error.message}`);
       }
     };
 
@@ -29,8 +43,24 @@ const EditarRuta = ({ route, navigation }) => {
         return;
       }
 
+      const precioNumerico = parseFloat(precio);
+      if (isNaN(precioNumerico)) {
+        Alert.alert('Error', 'El precio debe ser un número válido');
+        return;
+      }
+
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert('Error', 'No se ha encontrado el token de autenticación');
+        return;
+      }
+
       const response = await axios.put(`https://rutnaback-production.up.railway.app/rutas/actualizar/${id}`, {
-        precio: parseFloat(precio)
+        precio: precioNumerico
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
 
       if (response.status === 200) {
@@ -46,10 +76,14 @@ const EditarRuta = ({ route, navigation }) => {
 
   return (
     <ImageBackground source={require('../../assets/fondodef.png')} style={styles.screenContainer}>
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Admin')}>
+        <Icon name="arrow-back" size={30} color="#000" />
+      </TouchableOpacity>
       <View style={styles.cardContainer}>
         <View style={styles.card}>
           <MaterialCommunityIcons name="map-marker-plus" size={48} color="#FFB347" style={styles.icon} />
           <Text style={styles.cardTitle}>Editar Ruta</Text>
+          <Text style={styles.destinoText}>Destino: {destino}</Text>
           <TextInput
             style={styles.input}
             placeholder="Precio"
@@ -74,6 +108,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 1,
   },
   cardContainer: {
     flexDirection: 'row',
@@ -100,6 +140,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFB347',
     textAlign: 'center',
+  },
+  destinoText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+    fontWeight: 'bold',
   },
   input: {
     height: 40,
