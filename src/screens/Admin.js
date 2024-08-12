@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { View, Text, StyleSheet, ImageBackground, TouchableOpacity, Modal, FlatList, TextInput, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ImageBackground, TouchableOpacity, Modal, FlatList, TextInput, ScrollView, Animated ,Alert } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -38,31 +38,88 @@ const CustomSelect = ({ selectedValue, onValueChange, options }) => {
     </>
   );
 };
-const Inicio = ({ navigation }) => (
-  <ImageBackground source={require('../../assets/fondodef.png')} style={styles.screenContainer}>
-    <View style={styles.textContainer}>
-      <Text style={styles.welcomeTitle}>Bienvenido</Text>
-      <Text style={styles.welcomeDescription}>RUTNA: Tu compañera de viaje para cada destino</Text>
-    </View>
-    <View style={styles.cardContainer}>
-      <TouchableOpacity style={styles.smallCard} onPress={() => navigation.navigate('VerAlumno')}>
-        <MaterialCommunityIcons name="account-group" size={32} color="#FFB347" />
-        <Text style={styles.cardTitle}>Ver Alumnos</Text>
-        <Text style={styles.cardDescription}>Consulta el perfil de los alumnos registrados.</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.smallCard} onPress={() => navigation.navigate('VerEmpleado')}>
-        <MaterialCommunityIcons name="map" size={32} color="#FFB347" />
-        <Text style={styles.cardTitle}>Ver Empleados</Text>
-        <Text style={styles.cardDescription}>Consulta el perfil de los empleados registrados.</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.smallCard} onPress={() => navigation.navigate('VerRutas')}>
-        <MaterialCommunityIcons name="map-search" size={32} color="#FFB347" />
-        <Text style={styles.cardTitle}>Ver Rutas</Text>
-        <Text style={styles.cardDescription}>Accede a la lista completa de rutas.</Text>
-      </TouchableOpacity>
-    </View>
-  </ImageBackground>
-);
+const Inicio = ({ navigation }) => {
+  const [loading, setLoading] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current; // Initial opacity is 0
+  const rotateAnim = useRef(new Animated.Value(0)).current; // Rotation animation
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, [fadeAnim]);
+
+  useEffect(() => {
+    if (loading) {
+      Animated.loop(
+        Animated.timing(rotateAnim, {
+          toValue: 1,
+          duration: 1000, // Rotate every 1 second
+          useNativeDriver: true,
+        })
+      ).start();
+    } else {
+      rotateAnim.stopAnimation();
+    }
+  }, [loading, rotateAnim]);
+
+  const handleLogout = () => {
+    setLoading(true); // Start loading animation
+    setTimeout(() => {
+      setLoading(false);
+      navigation.navigate('Login');
+    }, 1000); // Simulate a loading time of 1 second
+  };
+
+  // Interpolation for rotation
+  const rotate = rotateAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  return (
+    <ImageBackground source={require('../../assets/fondodef.png')} style={styles.screenContainer}>
+      <Animated.View style={[styles.headerContainer, { opacity: fadeAnim }]}>
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          {loading ? (
+            <View style={styles.loaderContainer}>
+              <Animated.View style={[styles.loader, { transform: [{ rotate }] }]} />
+              <Text style={styles.logoutButtonText}>Cargando...</Text>
+            </View>
+          ) : (
+            <View style={styles.logoutContent}>
+              <MaterialCommunityIcons name="logout" size={24} color="#FFB347" />
+            </View>
+          )}
+        </TouchableOpacity>
+      </Animated.View>
+      <View style={styles.textContainer}>
+        <Text style={styles.welcomeTitle}>Bienvenido</Text>
+        <Text style={styles.welcomeDescription}>RUTNA: ¡Tu compañera de viaje para cada destino!</Text>
+      </View>
+      <View style={styles.cardContainer}>
+        <TouchableOpacity style={styles.smallCard} onPress={() => navigation.navigate('VerAlumno')}>
+          <MaterialCommunityIcons name="account-group" size={32} color="#FFB347" />
+          <Text style={styles.cardTitle}>Ver Alumnos</Text>
+          <Text style={styles.cardDescriptionS}>Consulta el perfil de los alumnos registrados.</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.smallCard} onPress={() => navigation.navigate('VerEmpleado')}>
+          <MaterialCommunityIcons name="map" size={32} color="#FFB347" />
+          <Text style={styles.cardTitle}>Ver Empleados</Text>
+          <Text style={styles.cardDescriptionS}>Consulta el perfil de los empleados registrados.</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.smallCard} onPress={() => navigation.navigate('VerRutas')}>
+          <MaterialCommunityIcons name="map-search" size={32} color="#FFB347" />
+          <Text style={styles.cardTitle}>Ver Rutas</Text>
+          <Text style={styles.cardDescriptionS}>Accede a la lista completa de rutas.</Text>
+        </TouchableOpacity>
+      </View>
+    </ImageBackground>
+  );
+};
+
 
 
 //SALDO
@@ -779,19 +836,57 @@ const styles = StyleSheet.create({
     width: '33%',
     textAlign: 'center',
   },
-  logoutButtonContainer: {
-    marginTop: 'auto',
-    paddingBottom: 16,
-  },
   logoutButton: {
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  logoutContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  loaderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  loader: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     backgroundColor: '#FFB347',
-    padding: 8,
-    borderRadius: 4,
+    marginRight: 8,
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   logoutButtonText: {
-    color: '#000',
+    color: '#FFB347',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  smallCard: {
+    width: '50%',
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 16,
+    margin: 8,
+    marginTop:2,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cardDescriptionS:{
+  fontSize:14,
+  textAlign: 'center',
   },
 
 });
