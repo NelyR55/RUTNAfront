@@ -1094,16 +1094,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   logoutContent: {
+    
     flexDirection: 'row',
-    alignItems: 'flex-end',  
+    alignItems: 'flex-start',  // Cambiado de 'flex-end' a 'flex-start'
     justifyContent: 'flex-end',  
     width: '100%', 
     padding: 10,
+    
   },
   logoutButton: {
-    padding: 10,
+    padding: 1,  // Reducido el padding para que el botón esté más arriba
     flexDirection: 'row',
-    alignItems: 'flex-end',  
+    alignItems: 'flex-start',  // Cambiado de 'flex-end' a 'flex-start'
     justifyContent: 'flex-end',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -1123,7 +1125,6 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',  // Empuja el loader hacia la derecha
     marginRight: 8,
   },
-  
   logoutButtonText: {
     color: '#FFB347',
     fontSize: 14,
