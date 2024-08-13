@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ImageBackground, TextInput, TouchableOpacity, Modal, Image, Alert, FlatList } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AlumnoScreen = () => {
   const [matricula, setMatricula] = useState('');
@@ -11,9 +12,19 @@ const AlumnoScreen = () => {
   const [qrData, setQrData] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const fetchSaldo = async (matricula) => {
+  const fetchSaldo = async () => {
     try {
-      const response = await fetch(`https://rutnaback-production.up.railway.app/user/obtenerAlumnos/saldo?matricula=${matricula}`);
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        Alert.alert('Error', 'No se encontró un token de autenticación.');
+        return;
+      }
+
+      const response = await fetch('https://rutnaback-production.up.railway.app/boletos/versaldo', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const data = await response.json();
       if (response.ok) {
         setSaldo(data.saldo);
@@ -28,7 +39,12 @@ const AlumnoScreen = () => {
 
   const fetchRutas = async () => {
     try {
-      const response = await fetch('https://rutnaback-production.up.railway.app/rutas');
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch('https://rutnaback-production.up.railway.app/rutas', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       const data = await response.json();
       if (response.ok) {
         setRutas(data);
@@ -42,24 +58,23 @@ const AlumnoScreen = () => {
   };
 
   useEffect(() => {
+    fetchSaldo();
     fetchRutas();
   }, []);
 
   const handleCompra = async () => {
-    if (!matricula) {
-      Alert.alert('Error', 'Por favor, ingresa tu matrícula');
-      return;
-    }
     if (!selectedRuta) {
       Alert.alert('Error', 'Por favor, selecciona una ruta');
       return;
     }
     setLoading(true);
     try {
+      const token = await AsyncStorage.getItem('token');
       const response = await fetch('https://rutnaback-production.up.railway.app/boletos/comprar', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           usuario: matricula,
@@ -72,7 +87,7 @@ const AlumnoScreen = () => {
       if (response.ok && data.codigoQR) {
         setQrData(data);
         setModalVisible(true);
-        fetchSaldo(matricula);
+        fetchSaldo();
       } else {
         Alert.alert('Error', data.error || 'Error al comprar el boleto');
       }
@@ -111,12 +126,7 @@ const AlumnoScreen = () => {
             placeholderTextColor="#aaa"
             keyboardType="numeric"
             value={matricula}
-            onChangeText={(text) => {
-              setMatricula(text);
-              if (text.length === 8) {
-                fetchSaldo(text);
-              }
-            }}
+            onChangeText={(text) => setMatricula(text)}
           />
           <TouchableOpacity
             style={styles.selectButton}
@@ -254,7 +264,7 @@ const styles = StyleSheet.create({
   logo: {
     width: 100,
     height: 100,
-    marginBottom:10,
+    marginBottom: 10,
   },
   cardTitle: {
     marginTop: 4,
@@ -262,31 +272,23 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFB347',
     textAlign: 'center',
-    marginBottom:10,
+    marginBottom: 10,
   },
   input: {
     height: 50,
     fontWeight: 'bold',
-    borderColor: '#FFB347',
-    borderWidth: 1,
-    borderRadius: 5,
-    padding: 10,
-    marginTop: 20,
+    fontSize: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    marginBottom: 20,
     width: '100%',
-    color: '#333',
-    textAlign: 'center',
-    backgroundColor: '#f1f1f1',
   },
   selectButton: {
-    height: 50,
-    width: '100%',
-    borderColor: '#FFB347',
-    borderWidth: 1,
+    backgroundColor: '#FFB347',
+    padding: 15,
     borderRadius: 5,
-    backgroundColor: '#f1f1f1',
-    justifyContent: 'center',
+    width: '100%',
     alignItems: 'center',
-    marginTop: 20,
   },
   selectButtonText: {
     fontSize: 16,

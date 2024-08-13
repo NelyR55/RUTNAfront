@@ -7,7 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import axios from 'axios';
 
 
-const roleOptions = ['Admin', 'Chofer', 'Alumno'];
+const roleOptions = ['Admin', 'Chofer'];
 
 const CustomSelect = ({ selectedValue, onValueChange, options }) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -190,24 +190,37 @@ const AgregarSaldo = () => {
   );
 };
 // AGREGAR USUARIO 
+const validateUsername = (username) => {
+  const regex = /^[A-Za-z]+$/;
+  return regex.test(username) && username.length <= 15;
+};
+
 const AgregarUsuario = () => {
   const [usuario, setUsuario] = useState('');
   const [pass, setPass] = useState('');
-  const [saldo, setSaldo] = useState('');
   const [selectedRole, setSelectedRole] = useState('Rol');
 
   const handleAgregarUsuario = async () => {
+    if (!validateUsername(usuario)) {
+      Alert.alert('Error', 'El nombre de usuario debe contener solo letras y tener un máximo de 15 caracteres.');
+      return;
+    }
+
+    if (pass.trim() === '') {
+      Alert.alert('Error', 'La contraseña es requerida.');
+      return;
+    }
+
     try {
       const response = await axios.post('https://rutnaback-production.up.railway.app/user/registrarUsuario', {
         usuario,
         pass,
         rol: selectedRole.toLowerCase(),
-        saldo
+        saldo: 0 // Establece el saldo en 0 en el backend
       });
       Alert.alert('Éxito', 'Usuario registrado correctamente');
       setUsuario('');
       setPass('');
-      setSaldo('');
       setSelectedRole('Rol');
     } catch (error) {
       if (error.response) {
@@ -244,14 +257,6 @@ const AgregarUsuario = () => {
             onValueChange={(value) => setSelectedRole(value)}
             options={roleOptions}
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Saldo"
-            placeholderTextColor="#aaa"
-            keyboardType="numeric"
-            value={saldo}
-            onChangeText={setSaldo}
-          />
           <LinearGradient colors={['#FFB347', '#FFCC70']} style={styles.button}>
             <TouchableOpacity style={styles.buttonContent} onPress={handleAgregarUsuario}>
               <Text style={styles.buttonText}>Aceptar</Text>
@@ -262,81 +267,225 @@ const AgregarUsuario = () => {
     </ImageBackground>
   );
 };
-const VerAlumnos = () => {
-  const [alumnos, setAlumnos] = useState([]);
 
-  const fetchAlumnos = async () => {
-    try {
-      const response = await axios.get('https://rutnaback-production.up.railway.app/user/alumnos');
-      setAlumnos(response.data);
-    } catch (error) {
-      Alert.alert('Error', 'Error al obtener la lista de alumnos');
-    }
-  };
 
-  React.useEffect(() => {
-    fetchAlumnos();
+//VER ALUMNOS
+const VerAlumno = () => {
+  const [datos, setDatos] = useState([]);
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const obtenerDatos = async () => {
+      try {
+        const respuesta = await axios.get(
+          'https://rutnaback-production.up.railway.app/user/obtenerAlumnos'
+        );
+        setDatos(respuesta.data);
+      } catch (error) {
+        console.error('Error al obtener los datos:', error);
+      }
+    };
+
+    obtenerDatos();
   }, []);
 
+  const handleDelete = (id) => {
+    Alert.alert(
+      'Eliminar Alumno',
+      '¿Estás seguro de que deseas eliminar este alumno?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel'
+        },
+        {
+          text: 'Eliminar',
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem('token');
+
+              if (!token) {
+                Alert.alert('Error', 'Token de autenticación no encontrado');
+                return;
+              }
+
+              console.log('Token:', token); // Para depuración
+
+              await axios.delete(
+                `https://rutnaback-production.up.railway.app/user/eliminarUsuario/${id}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`
+                  }
+                }
+              );
+
+              setDatos(datos.filter((alumno) => alumno.id !== id));
+              Alert.alert('Éxito', 'Alumno eliminado correctamente');
+            } catch (error) {
+              console.error('Error al eliminar el alumno:', error);
+              Alert.alert(
+                'Error',
+                'No se pudo eliminar el alumno. Por favor, intenta nuevamente.'
+              );
+            }
+          },
+          style: 'destructive'
+        }
+      ],
+      { cancelable: false }
+    );
+  };
+
   return (
-    <ImageBackground source={require('../../assets/fondodef.png')} style={styles.screenContainer}>
-      <View style={styles.cardContainer}>
-        <View style={styles.card}>
-          <MaterialCommunityIcons name="account-group" size={48} color="#FFB347" />
-          <Text style={styles.cardTitle}>Ver Alumnos</Text>
-          <FlatList
-            data={alumnos}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <View style={styles.listItem}>
-                <Text style={styles.listItemText}>Usuario: {item.usuario}</Text>
-                <Text style={styles.listItemText}>Saldo: {item.saldo}</Text>
-              </View>
-            )}
-          />
-        </View>
+    <ImageBackground
+      source={require('../../assets/fondodef.png')}
+      style={styles.container}
+    >
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.navigate('Admin')}
+        >
+          <Icon name="arrow-back" size={30} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Historial</Text>
       </View>
+      <FlatList
+        data={datos}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Image source={require('../../assets/Usuario.png')} style={styles.image} />
+            <View style={styles.cardContent}>
+              <View style={styles.textContainer}>
+                <Text style={styles.usuario}>{item.usuario}</Text>
+                <Text style={styles.saldo}>Saldo: ${item.saldo}</Text>
+              </View>
+              <View style={styles.iconContainer}>
+                <TouchableOpacity
+                  onPress={() => handleDelete(item.id)}
+                  style={styles.iconButton}
+                >
+                  <Icon name="trash" size={24} color="#FF4D4D" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
+        keyExtractor={(item) => item.id.toString()}
+      />
+    </ImageBackground>
+  );
+};
+//VER EMPLEADOS
+const VerEmpleado = () => {
+  const [datos, setDatos] = useState([]);
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    const obtenerDatos = async () => {
+      try {
+        const respuesta = await axios.get(
+          'https://rutnaback-production.up.railway.app/user/obtenerAdmins'
+        );
+        setDatos(respuesta.data);
+      } catch (error) {
+        console.error('Error al obtener los datos:', error);
+      }
+    };
+
+    obtenerDatos();
+  }, []);
+
+  const handleDelete = (id) => {
+    Alert.alert(
+      'Eliminar Empleado',
+      '¿Estás seguro de que deseas eliminar este empleado?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel'
+        },
+        {
+          text: 'Eliminar',
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem('token');
+
+              if (!token) {
+                Alert.alert('Error', 'Token de autenticación no encontrado');
+                return;
+              }
+
+              console.log('Token:', token); // Para depuración
+
+              await axios.delete(
+                `https://rutnaback-production.up.railway.app/user/eliminarUsuario/${id}`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`
+                  }
+                }
+              );
+
+              setDatos(datos.filter((empleado) => empleado.id !== id));
+              Alert.alert('Éxito', 'Empleado eliminado correctamente');
+            } catch (error) {
+              console.error('Error al eliminar el empleado:', error);
+              Alert.alert(
+                'Error',
+                'No se pudo eliminar el empleado. Por favor, intenta nuevamente.'
+              );
+            }
+          },
+          style: 'destructive'
+        }
+      ],
+      { cancelable: false }
+    );
+  };
+
+  return (
+    <ImageBackground
+      source={require('../../assets/fondodef.png')}
+      style={styles.container}
+    >
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.navigate('Admin')}
+        >
+          <Icon name="arrow-back" size={30} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.title}>Empleados</Text>
+      </View>
+      <FlatList
+        data={datos}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Image source={require('../../assets/Usuario.png')} style={styles.image} />
+            <View style={styles.cardContent}>
+              <View style={styles.userInfo}>
+                <Text style={styles.usuario}>{item.usuario}</Text>
+                <Text style={styles.rol}>{item.rol}</Text>
+              </View>
+              <View style={styles.iconsContainer}>
+                <TouchableOpacity
+                  onPress={() => handleDelete(item.id)}
+                  style={styles.iconButton}
+                >
+                  <Icon name="trash" size={24} color="#FF4D4D" />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
+        keyExtractor={(item) => item.id.toString()}
+      />
     </ImageBackground>
   );
 };
 
-const VerEmpleados = () => {
-  const [empleados, setEmpleados] = useState([]);
-
-  const fetchEmpleados = async () => {
-    try {
-      const response = await axios.get('https://rutnaback-production.up.railway.app/user/admins');
-      setEmpleados(response.data);
-    } catch (error) {
-      Alert.alert('Error', 'Error al obtener la lista de empleados');
-    }
-  };
-
-  React.useEffect(() => {
-    fetchEmpleados();
-  }, []);
-
-  return (
-    <ImageBackground source={require('../../assets/fondodef.png')} style={styles.screenContainer}>
-      <View style={styles.cardContainer}>
-        <View style={styles.card}>
-          <MaterialCommunityIcons name="account-group" size={48} color="#FFB347" />
-          <Text style={styles.cardTitle}>Ver Empleados</Text>
-          <FlatList
-            data={empleados}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <View style={styles.listItem}>
-                <Text style={styles.listItemText}>Usuario: {item.usuario}</Text>
-                <Text style={styles.listItemText}>Rol: {item.rol}</Text>
-              </View>
-            )}
-          />
-        </View>
-      </View>
-    </ImageBackground>
-  );
-};
 //VER RUTAS
 const VerRutas = () => {
   const [datos, setDatos] = useState([]);
@@ -461,6 +610,110 @@ const VerRutas = () => {
     </ImageBackground>
   );
 };
+
+
+// AGREGAR Alumno 
+const AgregarAlumno = () => {
+  const [usuario, setUsuario] = useState('');
+  const [pass, setPass] = useState('');
+  const [saldo, setSaldo] = useState('');
+  const [error, setError] = useState('');
+  const [passError, setPassError] = useState('');
+  const selectedRole = 'alumno'; // Ajusta el rol a 'alumno' o el valor deseado
+
+  const handleAgregarUsuario = async () => {
+    // Validar que la matrícula sea un número de exactamente 10 dígitos
+    if (!/^\d{10}$/.test(usuario)) {
+      setError('La matrícula debe ser un número de 10 dígitos.');
+      return;
+    }
+
+    // Validar que la contraseña no esté vacía
+    if (pass.trim() === '') {
+      setPassError('La contraseña es requerida.');
+      return;
+    }
+
+    setError(''); // Limpiar el error si la validación es correcta
+    setPassError(''); // Limpiar el error si la validación es correcta
+
+    try {
+      const response = await axios.post('https://rutnaback-production.up.railway.app/user/registrarUsuario', {
+        usuario,
+        pass,
+        rol: selectedRole.toLowerCase(),
+        saldo
+      });
+      Alert.alert('Éxito', 'Alumno registrado correctamente');
+      setUsuario('');
+      setPass('');
+      setSaldo('');
+    } catch (error) {
+      if (error.response) {
+        Alert.alert('Error', error.response.data.error);
+      } else {
+        Alert.alert('Error', 'Error de conexión');
+      }
+    }
+  };
+
+  return (
+    <ImageBackground source={require('../../assets/fondodef.png')} style={styles.screenContainer}>
+      <View style={styles.cardContainer}>
+        <View style={styles.card}>
+          <MaterialCommunityIcons name="account-multiple-plus" size={48} color="#FFB347" />
+          <Text style={styles.cardTitle}>Agregar Alumno</Text>
+          <TextInput
+            style={[styles.input, error ? { borderColor: 'red', borderWidth: 1 } : {}]}
+            placeholder="Matrícula"
+            placeholderTextColor="#aaa"
+            value={usuario}
+            onChangeText={(text) => {
+              setUsuario(text);
+              // Validar en tiempo real si el texto es válido
+              if (!/^\d{10}$/.test(text)) {
+                setError('La matrícula debe ser un número de 10 dígitos.');
+              } else {
+                setError('');
+              }
+            }}
+          />
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          <TextInput
+            style={[styles.input, passError ? { borderColor: 'red', borderWidth: 1 } : {}]}
+            placeholder="Contraseña"
+            placeholderTextColor="#aaa"
+            secureTextEntry={true}
+            value={pass}
+            onChangeText={(text) => {
+              setPass(text);
+              if (text.trim() === '') {
+                setPassError('La contraseña es requerida.');
+              } else {
+                setPassError('');
+              }
+            }}
+          />
+          {passError ? <Text style={styles.errorText}>{passError}</Text> : null}
+          <TextInput
+            style={styles.input}
+            placeholder="Saldo"
+            placeholderTextColor="#aaa"
+            keyboardType="numeric"
+            value={saldo}
+            onChangeText={setSaldo}
+          />
+          <LinearGradient colors={['#FFB347', '#FFCC70']} style={styles.button}>
+            <TouchableOpacity style={styles.buttonContent} onPress={handleAgregarUsuario}>
+              <Text style={styles.buttonText}>Aceptar</Text>
+            </TouchableOpacity>
+          </LinearGradient>
+        </View>
+      </View>
+    </ImageBackground>
+  );
+};
+
 ///AGREGAR RUTA
 
 const AgregarRuta = () => {
@@ -599,6 +852,7 @@ const Actividad = () => {
   );
 };
 
+//NAVEGACION
 const Tab = createBottomTabNavigator();
 
 const Admin = () => (
@@ -608,6 +862,8 @@ const Admin = () => (
         let iconName;
         if (route.name === 'Inicio') {
           iconName = 'home';
+        } else if (route.name === 'Agregar Alumno') {
+          iconName = 'account-outline';
         } else if (route.name === 'Agregar Usuario') {
           iconName = 'account-multiple-plus';
         } else if (route.name === 'Agregar Ruta') {
@@ -630,13 +886,14 @@ const Admin = () => (
     })}
   >
     <Tab.Screen name="Inicio" component={Inicio} />
+    <Tab.Screen name="Agregar Alumno" component={AgregarAlumno} />
     <Tab.Screen name="Agregar Usuario" component={AgregarUsuario} />
     <Tab.Screen name="Agregar Ruta" component={AgregarRuta} />
     <Tab.Screen name="Cargar Saldo" component={AgregarSaldo} />
     <Tab.Screen name="Actividad" component={Actividad} />
   </Tab.Navigator>
 );
-
+//ESTILOS
 const styles = StyleSheet.create({
   screenContainer: {
     flex: 1,
@@ -667,7 +924,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     marginTop: 10,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#FFB347',
     textAlign: 'center',
@@ -836,42 +1093,48 @@ const styles = StyleSheet.create({
     width: '33%',
     textAlign: 'center',
   },
-  logoutButton: {
-    backgroundColor: '#fff',
-    padding: 10,
-    borderRadius: 8,
+  logoutContent: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',  
+    justifyContent: 'flex-end',  
+    width: '100%', 
+    padding: 10,
+  },
+  logoutButton: {
+    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'flex-end',  
+    justifyContent: 'flex-end',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 3,
   },
-  logoutContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   loaderContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'flex-end',  // Alinea el contenido a la derecha
+    alignItems: 'center',  // Centra verticalmente el contenido
+    width: '100%',  // Ocupa todo el ancho del contenedor
   },
   loader: {
     width: 16,
     height: 16,
-    borderRadius: 8,
-    backgroundColor: '#FFB347',
+    marginLeft: 'auto',  // Empuja el loader hacia la derecha
     marginRight: 8,
-    borderWidth: 2,
-    borderColor: '#fff',
   },
+  
   logoutButtonText: {
     color: '#FFB347',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
+    textAlign: 'right',  
   },
+  
+  
   smallCard: {
     width: '50%',
+    height:'30%',
     backgroundColor: '#fff',
     borderRadius: 8,
     padding: 16,
@@ -885,7 +1148,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   cardDescriptionS:{
-  fontSize:14,
+  fontSize:12,
   textAlign: 'center',
   },
 
